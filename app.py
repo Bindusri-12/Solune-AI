@@ -23,14 +23,28 @@ DEFAULTS = {
     "latest_checkin_date": None,
     "display_name": "",
     "theme": "Lavender",
-    "chat_messages": [],
+    "positive_moment": "",
+    "support_plan": None,
 }
 for key, value in DEFAULTS.items():
     if key not in st.session_state:
-        # Copy mutable defaults so each session gets its own objects.
         st.session_state[key] = value.copy() if isinstance(value, (dict, list)) else value
 
-# ---------- CUSTOMISATION ----------
+# ---------- CUSTOMISATION & NAVIGATION ----------
+PAGES = [
+    "🏠 Dashboard",
+    "💜 Mood Check-In",
+    "🌿 Calm Corner",
+    "🎯 Weekly Goals",
+    "💬 Support Chatbot",
+    "📔 Reflection Journal",
+    "🤝 Parent Support",
+    "🔒 Privacy & About",
+]
+
+if "page" not in st.session_state:
+    st.session_state.page = PAGES[0]
+
 with st.sidebar:
     st.title("🌙 Solune AI")
     st.caption("Your personal well-being space")
@@ -41,27 +55,16 @@ with st.sidebar:
         placeholder="Enter a nickname (optional)",
         max_chars=30,
     )
-    selected_theme = st.selectbox(
+    theme_names = ["Lavender", "Ocean", "Mint", "Sunset"]
+    if st.session_state.theme not in theme_names:
+        st.session_state.theme = "Lavender"
+    st.session_state.theme = st.selectbox(
         "Choose a theme",
-        ["Lavender", "Ocean", "Mint", "Sunset"],
-        index=["Lavender", "Ocean", "Mint", "Sunset"].index(st.session_state.theme),
+        theme_names,
+        index=theme_names.index(st.session_state.theme),
     )
-    st.session_state.theme = selected_theme
-    page = st.radio(
-        "Go to",
-        [
-            "🏠 Dashboard",
-            "💜 Mood Check-In",
-            "🌿 Calm Corner",
-            "🎯 Weekly Goals",
-            "💬 Support Chatbot",
-            "📔 Reflection Journal",
-            "🤝 Parent Support",
-            "🔒 Privacy & About",
-        ],
-        key="page_selection",
-    )
-    st.caption("Your session data may reset when the app session restarts.")
+    st.radio("Go to", PAGES, key="page")
+    st.caption("Session data may reset when the app session restarts.")
 
 themes = {
     "Lavender": ("#f8f5ff", "#66518f", "#7965a8", "#eee7fb"),
@@ -88,7 +91,7 @@ st.markdown(
 )
 
 # ---------- DEMONSTRATION MODEL ----------
-# Illustrative synthetic data only; this is not a validated assessment.
+# Illustrative synthetic data only; not a validated mental-health assessment.
 data = pd.DataFrame({
     "mood": [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 0, 1, 2, 3, 4, 1, 2, 3, 0, 4],
     "stress": [5, 4, 5, 4, 3, 3, 2, 2, 1, 1, 5, 4, 3, 2, 1, 5, 4, 3, 3, 2],
@@ -107,16 +110,16 @@ model.fit(data[["mood", "stress", "sleep", "pressure"]], data["support"])
 
 mood_options = {"Very low": 0, "Low": 1, "Okay": 2, "Good": 3, "Very good": 4}
 
-def navigate_to(target):
-    st.session_state.page_selection = target
 
 def greeting():
     name = st.session_state.display_name.strip()
     return f"Hello, {name} 🌙" if name else "Hello 🌙"
 
+
 def latest_checkin_today():
     today = date.today().isoformat()
     return any(item.get("Date") == today for item in st.session_state.mood_history)
+
 
 def show_suggestion(prediction, sleep_hours=None):
     if prediction == "Extra support":
@@ -135,13 +138,18 @@ def show_suggestion(prediction, sleep_hours=None):
             "a steady rest routine can support your well-being."
         )
     if sleep_hours is not None and sleep_hours < 7:
-        st.write("🌙 You could reflect on your bedtime routine and whether you are getting enough rest.")
+        st.write(
+            "🌙 You could reflect on your bedtime routine and whether you are getting enough rest."
+        )
     st.caption(
         "Suggestions are based on a Decision Tree trained on illustrative synthetic data. "
         "They are not a validated mental-health assessment or diagnosis."
     )
 
+
 # ---------- DASHBOARD ----------
+page = st.session_state.page
+
 if page == "🏠 Dashboard":
     st.title("🌙 Solune AI")
     st.subheader(greeting())
@@ -163,23 +171,19 @@ if page == "🏠 Dashboard":
     st.subheader("✨ Quick shortcuts")
     q1, q2 = st.columns(2)
     with q1:
-        st.button(
-            "💜 Do a mood check-in", use_container_width=True,
-            on_click=navigate_to, args=("💜 Mood Check-In",)
-        )
-        st.button(
-            "🌿 Visit Calm Corner", use_container_width=True,
-            on_click=navigate_to, args=("🌿 Calm Corner",)
-        )
+        if st.button("💜 Do a mood check-in", use_container_width=True):
+            st.session_state.page = "💜 Mood Check-In"
+            st.rerun()
+        if st.button("🌿 Visit Calm Corner", use_container_width=True):
+            st.session_state.page = "🌿 Calm Corner"
+            st.rerun()
     with q2:
-        st.button(
-            "🎯 Review weekly goals", use_container_width=True,
-            on_click=navigate_to, args=("🎯 Weekly Goals",)
-        )
-        st.button(
-            "💬 Open support chatbot", use_container_width=True,
-            on_click=navigate_to, args=("💬 Support Chatbot",)
-        )
+        if st.button("🎯 Review weekly goals", use_container_width=True):
+            st.session_state.page = "🎯 Weekly Goals"
+            st.rerun()
+        if st.button("💬 Open support chatbot", use_container_width=True):
+            st.session_state.page = "💬 Support Chatbot"
+            st.rerun()
 
     if st.session_state.mood_history:
         st.subheader("📈 Your recent check-ins")
@@ -187,7 +191,6 @@ if page == "🏠 Dashboard":
         st.line_chart(recent_df.set_index("Time")[["Mood score", "Stress level"]])
     else:
         st.caption("Your recent check-in chart will appear here after you record a mood check-in.")
-
 
 # ---------- MOOD CHECK-IN ----------
 elif page == "💜 Mood Check-In":
@@ -257,7 +260,10 @@ elif page == "🌿 Calm Corner":
     )
     if activity == "Gentle breathing":
         st.subheader("A gentle breathing pause")
-        st.write("Sit comfortably if you can. Keep your breathing natural and easy; don't force or hold your breath.")
+        st.write(
+            "Sit comfortably if you can. Keep your breathing natural and easy; "
+            "don't force or hold your breath."
+        )
         st.markdown(
             f"""
             <div style="background:{soft}; padding:22px; border-radius:16px; text-align:center;">
@@ -283,12 +289,25 @@ elif page == "🌿 Calm Corner":
     elif activity == "Tiny reset break":
         st.subheader("A tiny reset")
         st.write("Try one small, comfortable option:")
-        st.markdown("- Stretch gently if that feels okay.\n- Drink some water.\n- Look away from your screen for a moment.\n- Tidy one small part of your desk.\n- Step somewhere quiet or get a little fresh air, if possible.")
+        st.markdown(
+            "- Stretch gently if that feels okay.\n"
+            "- Drink some water.\n"
+            "- Look away from your screen for a moment.\n"
+            "- Tidy one small part of your desk.\n"
+            "- Step somewhere quiet or get a little fresh air, if possible."
+        )
     else:
         st.subheader("Find one positive moment")
         st.write("Think of one small thing from today that felt pleasant, interesting, or kind.")
-        st.text_area("Optional note (kept only in this active session if you save it nowhere)", key="positive_moment", max_chars=500)
-    st.caption("These are general well-being activities, not medical advice. Skip anything that makes you uncomfortable.")
+        st.text_area(
+            "Optional note (not saved unless you choose to write it in your journal)",
+            key="positive_moment",
+            max_chars=500,
+        )
+    st.caption(
+        "These are general well-being activities, not medical advice. "
+        "Skip anything that makes you uncomfortable."
+    )
 
 # ---------- WEEKLY GOALS ----------
 elif page == "🎯 Weekly Goals":
@@ -306,7 +325,9 @@ elif page == "🎯 Weekly Goals":
     st.progress(done / total if total else 0)
     st.write(f"**Progress:** {done} of {total} goals checked off.")
     if done == total:
-        st.success("You checked off every goal. Remember, your well-being matters more than completing a list.")
+        st.success(
+            "You checked off every goal. Remember, your well-being matters more than completing a list."
+        )
     if st.button("Reset weekly goals"):
         st.session_state.weekly_goals = {goal: False for goal in st.session_state.weekly_goals}
         for goal in list(st.session_state.weekly_goals.keys()):
@@ -369,7 +390,9 @@ elif page == "💬 Support Chatbot":
 # ---------- REFLECTION JOURNAL ----------
 elif page == "📔 Reflection Journal":
     st.title("📔 Daily Reflection Journal")
-    st.write("Writing is optional. Avoid entering passwords, contact details, or other sensitive information.")
+    st.write(
+        "Writing is optional. Avoid entering passwords, contact details, or other sensitive information."
+    )
     with st.form("journal_form"):
         journal_note = st.text_area(
             "How was your day? What went well, and what felt challenging?",
@@ -401,28 +424,214 @@ elif page == "📔 Reflection Journal":
     else:
         st.caption("Your saved reflections will appear here.")
 
-# ---------- PARENT SUPPORT ----------
+# ---------- IMPROVED PARENT & TRUSTED ADULT SUPPORT ----------
 elif page == "🤝 Parent Support":
     st.title("🤝 Parent & Trusted Adult Support")
     st.write(
-        "Parents, guardians, teachers, and trusted adults can help by listening patiently, "
-        "asking open questions, and offering support without judgement."
+        "A supportive space for students and parents to communicate, "
+        "understand one another, and take small steps together."
     )
-    consent = st.checkbox("I'd like a conversation starter to ask a trusted adult for support.")
-    if consent:
-        st.success(
-            "I've been feeling under pressure lately. Could we talk about it? "
-            "I would appreciate your support."
+
+    student_tab, parent_tab = st.tabs(["💜 Student Support", "🌷 Parent Guidance"])
+
+    with student_tab:
+        st.subheader("💬 Conversation Starter Generator")
+        st.write(
+            "Choose what you would like to talk about. You can use the suggested message "
+            "as it is or change it to sound like you."
         )
-        st.caption("This displays a message for you. It does not contact a parent or share your check-in.")
+        topic = st.selectbox(
+            "What would you like support with?",
+            [
+                "Academic pressure or exams",
+                "Feeling overwhelmed",
+                "Needing someone to listen",
+                "Asking for help with schoolwork",
+                "Balancing study and rest",
+                "Something difficult I don't know how to explain",
+            ],
+            key="support_conversation_topic",
+        )
+        recipient = st.selectbox(
+            "Who would you prefer to talk to?",
+            [
+                "Parent or guardian",
+                "Teacher or school counsellor",
+                "Another trusted adult",
+            ],
+            key="support_recipient",
+        )
+        student_messages = {
+            "Academic pressure or exams": (
+                "I've been feeling pressure about my studies lately. Could we talk about what's worrying me "
+                "and work out one manageable next step together?"
+            ),
+            "Feeling overwhelmed": (
+                "I've had a lot on my mind, and things feel overwhelming right now. Could you listen to me "
+                "for a little while? It would help to talk it through."
+            ),
+            "Needing someone to listen": (
+                "I'd like to share something that's been on my mind. I don't need you to solve everything "
+                "straight away. I'd really appreciate it if you could listen."
+            ),
+            "Asking for help with schoolwork": (
+                "I'm finding some of my schoolwork difficult at the moment. Could you help me work out "
+                "where to start or who I could ask?"
+            ),
+            "Balancing study and rest": (
+                "I'd like to find a better balance between studying and taking breaks. Could we discuss "
+                "a routine that feels manageable?"
+            ),
+            "Something difficult I don't know how to explain": (
+                "Something has been bothering me, and I'm finding it difficult to explain. Could we talk "
+                "somewhere comfortable, at a time when we won't feel rushed?"
+            ),
+        }
+        student_message = student_messages[topic]
+        st.markdown(f"**Suggested message for your {recipient.lower()}**")
+        st.code(student_message, language=None)
+        st.caption("Use the copy icon on the message above, or personalise it before sharing.")
+
+        st.divider()
+        st.subheader("🌱 My Personal Support Plan")
+        st.write(
+            "Make a small plan for reaching out. You do not need to enter anyone's name, "
+            "phone number, or other personal details."
+        )
+        trusted_person = st.selectbox(
+            "What kind of person could you approach?",
+            [
+                "Parent or guardian",
+                "Teacher",
+                "School counsellor",
+                "Relative",
+                "Another adult I trust",
+                "I'm not sure yet",
+            ],
+            key="support_plan_person",
+        )
+        approach = st.radio(
+            "How would you prefer to start?",
+            [
+                "Talk in person",
+                "Write a message",
+                "Ask someone to help me start the conversation",
+            ],
+            key="support_plan_approach",
+        )
+        next_step = st.selectbox(
+            "Choose one small next step",
+            [
+                "Find a comfortable time to talk",
+                "Use one of the conversation starters above",
+                "Write down what I want to say",
+                "Ask a trusted person to help me arrange a conversation",
+                "Take time to think about what support I need",
+            ],
+            key="support_plan_next_step",
+        )
+        if st.button("Create my support plan", use_container_width=True):
+            st.session_state.support_plan = {
+                "Trusted person": trusted_person,
+                "Preferred approach": approach,
+                "Next step": next_step,
+            }
+        if st.session_state.support_plan:
+            plan = st.session_state.support_plan
+            st.success("Your support plan is ready.")
+            st.markdown(f"**Person to approach:** {plan['Trusted person']}")
+            st.markdown(f"**How to start:** {plan['Preferred approach']}")
+            st.markdown(f"**My next step:** {plan['Next step']}")
+            plan_message = (
+                "MY SOLUNE AI SUPPORT PLAN\n\n"
+                f"Person to approach: {plan['Trusted person']}\n"
+                f"How to start: {plan['Preferred approach']}\n"
+                f"My next step: {plan['Next step']}"
+            )
+            st.code(plan_message, language=None)
+            st.caption(
+                "Your plan is kept in this active app session. It is not automatically sent to anyone."
+            )
+
+    with parent_tab:
+        st.subheader("🌷 Supporting a Student")
+        st.write(
+            "A calm, patient response can make it easier for a student to talk about what they need."
+        )
+        with st.expander("💗 Listen before offering solutions"):
+            st.write(
+                "Give the student time to speak without interrupting. Try asking: "
+                "“Would you like me to listen, or would you like help thinking through a solution?”"
+            )
+        with st.expander("🌿 Avoid comparisons and judgement"):
+            st.write(
+                "Avoid comparing marks, behaviour, or progress with other students. "
+                "Recognise effort and ask what kind of help would be useful."
+            )
+        with st.expander("📚 Talk about academic pressure together"):
+            st.write(
+                "Ask which tasks feel most difficult. Help break work into smaller steps and make "
+                "reasonable space for rest, activities, and family time."
+            )
+        with st.expander("🛡️ Respect privacy while keeping them safe"):
+            st.write(
+                "Treat personal conversations respectfully. If there is a serious safety concern, "
+                "involve an appropriate trusted adult or professional who can help keep the student safe."
+            )
+
+        st.subheader("💬 Conversation Starter for Parents")
+        parent_topic = st.selectbox(
+            "What would you like to discuss with the student?",
+            [
+                "How they have been feeling",
+                "Schoolwork and exams",
+                "Rest and daily routine",
+                "How I can support them better",
+            ],
+            key="parent_conversation_topic",
+        )
+        parent_messages = {
+            "How they have been feeling": (
+                "I've noticed you may have a lot on your mind. How have things been feeling for you lately? "
+                "I'm here to listen, and you don't have to explain everything at once."
+            ),
+            "Schoolwork and exams": (
+                "How are you feeling about your schoolwork at the moment? Let's talk about what feels "
+                "difficult and decide together what might make it more manageable."
+            ),
+            "Rest and daily routine": (
+                "How has your daily routine been working for you? Would it help to look at how we can make "
+                "time for studying, rest, and the things you enjoy?"
+            ),
+            "How I can support them better": (
+                "I want to understand how I can support you better. Is there something you wish I would "
+                "listen to more carefully or something we could approach differently?"
+            ),
+        }
+        st.code(parent_messages[parent_topic], language=None)
+        st.caption("Use the copy icon on the message above or adapt it to sound natural.")
+
+        st.subheader("✨ A Gentle Reminder")
+        st.info(
+            "You do not have to solve everything in one conversation. Listening, showing patience, "
+            "and agreeing on one small next step can be a helpful beginning."
+        )
+
+    st.divider()
+    st.caption(
+        "Solune AI provides general supportive guidance. It is a student project prototype, not a "
+        "counselling or emergency service. Messages and support plans are not automatically sent to anyone. "
+        "If a student feels unsafe or needs urgent help, they should reach out to a trusted adult or "
+        "appropriate local emergency service."
+    )
 
 # ---------- PRIVACY & ABOUT ----------
 elif page == "🔒 Privacy & About":
     st.title("🔒 Privacy & About")
     st.write(
-        "Solune AI is a student project prototype. Mood check-ins, goals, and journal entries are kept in "
-        "Streamlit session state. They are not saved to a permanent database by this app and are not "
-        "automatically shared with parents. Session data may disappear when the session resets."
+        "Solune AI is a student project prototype. Mood check-ins, goals, journal entries, and support plans "
+        "are kept in Streamlit session state. They are not saved to a permanent database by this app and "
+        "are not automatically shared with parents. Session data may disappear when the session resets."
     )
     st.write(
         "The support suggestions use a small Decision Tree trained on illustrative synthetic data. "
