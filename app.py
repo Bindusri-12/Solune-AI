@@ -150,8 +150,9 @@ consent = st.checkbox(
     "I would like to see a conversation starter for asking an adult for support."
 )
 
+
 if consent:
-        st.success(
+    st.success(
         "I have been feeling under pressure lately. "
         "Could we talk about it? I would appreciate your support."
     )
@@ -159,6 +160,7 @@ if consent:
         "This only displays a message for you. It does not contact "
         "a parent or share your check-in."
     )
+
 
 st.divider()
 st.caption(
