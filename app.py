@@ -151,9 +151,9 @@ consent = st.checkbox(
 )
 
 if consent:
-    st.success(
-        '"I have been feeling under pressure lately. Could we talk "
-        "about it? I would appreciate your support."'
+        st.success(
+        "I have been feeling under pressure lately. "
+        "Could we talk about it? I would appreciate your support."
     )
     st.caption(
         "This only displays a message for you. It does not contact "
