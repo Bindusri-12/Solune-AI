@@ -337,7 +337,7 @@ elif st.session_state.page == "🏠 Dashboard":
             icon, title, description, target = card
             with col:
                 
-st.markdown(
+            st.markdown(
     f"""
     <div class="solune-card">
         <div class="solune-card-art">{icon}</div>
