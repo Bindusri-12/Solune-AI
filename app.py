@@ -253,6 +253,16 @@ div[data-testid="stExpander"] {{ border: 1px solid {t['line']}; border-radius: 1
 .solune-hero {{ background: linear-gradient(135deg, {t['soft']}, {t['panel']}); border: 1px solid {t['line']}; border-radius: 26px; padding: 30px; margin: 8px 0 20px 0; }}
 .solune-card {{ background: {t['panel']}; border: 1px solid {t['line']}; border-radius: 20px; padding: 20px; min-height: 158px; box-shadow: 0 5px 18px rgba(72, 52, 103, .05); }}
 .solune-icon {{ font-size: 2rem; margin-bottom: 8px; }}
+.solune-card-art {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 112px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #eee5ff, #fceafa, #e5efff);
+    font-size: 3.4rem;
+    margin-bottom: 16px;
+}}
 .small-muted {{ opacity: .82; font-size: .92rem; }}
 </style>
 """, unsafe_allow_html=True)
@@ -326,7 +336,18 @@ elif st.session_state.page == "🏠 Dashboard":
         for col, card in zip(cols, cards[row_start:row_start + 3]):
             icon, title, description, target = card
             with col:
-                st.markdown(f"<div class='solune-card'><div class='solune-icon'>{icon}</div><h3>{title}</h3><p>{description}</p></div>", unsafe_allow_html=True)
+                
+st.markdown(
+    f"""
+    <div class="solune-card">
+        <div class="solune-card-art">{icon}</div>
+        <h3>{title}</h3>
+        <p>{description}</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
                 if st.button(f"Open {title} →", key=f"card_{title}", use_container_width=True):
                     go_to(target)
                     st.rerun()
