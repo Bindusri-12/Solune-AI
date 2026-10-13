@@ -335,22 +335,23 @@ elif st.session_state.page == "🏠 Dashboard":
         cols = st.columns(3)
         for col, card in zip(cols, cards[row_start:row_start + 3]):
             icon, title, description, target = card
+            
             with col:
-                
-                 st.markdown(
-    f"""
-    <div class="solune-card">
-        <div class="solune-card-art">{icon}</div>
-        <h3>{title}</h3>
-        <p>{description}</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+                st.markdown(
+                    f"""
+                    <div class="solune-card">
+                        <div class="solune-card-art">{icon}</div>
+                        <h3>{title}</h3>
+                        <p>{description}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
                 if st.button(f"Open {title} →", key=f"card_{title}", use_container_width=True):
                     go_to(target)
                     st.rerun()
+
     st.caption("Illustrations can be added as local image assets in a later visual-polish pass; this version keeps the interface self-contained and reliable.")
 
 # MOOD CHECK-IN
